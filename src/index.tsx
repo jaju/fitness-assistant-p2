@@ -1,9 +1,10 @@
 import React from "react"
 import ReactDOM from "react-dom"
+import App from './App'
 
 ReactDOM.render(
-<div>
-This is the <b>Fitness App</b>
-</div>,
+<React.StrictMode>
+<App/>
+</React.StrictMode>,
 document.getElementById("app")
 )
