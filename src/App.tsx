@@ -1,52 +1,25 @@
-import React from "react"
+import React, {useEffect, useState} from "react"
 import logo from "./logo.svg"
 import "./App.css"
-import * as tf from "@tensorflow/tfjs"
-import {Logs, Sequential, Tensor} from "@tensorflow/tfjs";
+import {load, ModelConfig} from "@tensorflow-models/posenet"
+import "@tensorflow/tfjs-backend-webgl"
 
-let doTraining = async (model: Sequential, xs: tf.Tensor, ys: tf.Tensor, epochs: number = 200) => {
-    let logLogger = async (epoch: number, logs: Logs | undefined) => {
-        if (logs && epoch % 10 === 0) {
-            console.log("Epoch: " + epoch + ", loss: " + logs["loss"])
-        }
+let loadPosenet = async () => {
+    const modelConfig: ModelConfig = {
+        architecture: "ResNet50",
+        outputStride: 32,
+        inputResolution: {width: 800, height: 600},
+        quantBytes: 2,
+        multiplier: 1
     }
-    const history = await model.fit(xs, ys, {
-        epochs: epochs,
-        callbacks: {
-            onEpochEnd: logLogger
-        }
-    })
-    console.log(history.params)
-}
-
-let initModel = () => {
-    const model: Sequential = tf.sequential()
-    model.add(tf.layers.dense({units: 1, inputShape: [1]}))
-    model.compile({optimizer: tf.train.sgd(0.01), loss: "meanSquaredError"})
+    let model = await load(modelConfig)
+    console.log("Posenet model loaded...")
     return model
 }
 
-const trainingData = [
-    [-10.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 19.0],
-    [-21.0, -3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 37.0]
-]
-
-const model = initModel()
-let handleRunTraining = async () => {
-    let [trainXs, trainYs] = trainingData
-    let xs = tf.tensor2d(trainXs, [trainXs.length, 1])
-    let ys = tf.tensor2d(trainYs, [trainYs.length, 1])
-    await doTraining(model, xs, ys)
-        .then(() => {
-            let input = 10
-            model.summary()
-            const prediction = (model.predict(tf.tensor2d([input], [1, 1])) as Tensor).dataSync()
-            console.log("Predicted value for '" + input + "' : " + prediction[0])
-            tf.dispose(prediction)
-        })
-}
-
 function App() {
+    const [model, setModel] = useState(loadPosenet())
+    console.log(model)
     return (
         <div className="App">
             <header className="App-header">
@@ -62,9 +35,6 @@ function App() {
                 >
                     Learn React
                 </a>
-                <br/>
-                <button onClick={handleRunTraining}>Run Training</button>
-                (and watch the console output)
             </header>
         </div>
     );
